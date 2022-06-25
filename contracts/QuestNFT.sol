@@ -1,4 +1,4 @@
-// SPDX MITNFA
+// SPDX-License-Identifier: MITNFA
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -8,14 +8,16 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import 'base64-sol/base64.sol';
 
-contract QuestNFT is ERC721, Ownable, Pausable, MerkleProof {
-    uint256 publicMintPrice;
+contract QuestNFT is ERC721, Ownable, Pausable {
+    uint256 public publicMintPrice;
     uint256 internal _nextId;
+    uint256 public registerQuestCost;
+
+    // ============ QUEST REGISTRY ============
 
     mapping(uint256 => uint256) xpByTokenId;
     mapping(uint256 => mapping(uint256 => bool)) questCompletedByTokenId;
 
-    // Quest Registry
     struct Quest {
         uint256 questId;
         address questCreator;
@@ -23,17 +25,39 @@ contract QuestNFT is ERC721, Ownable, Pausable, MerkleProof {
         uint256 questRewardXP;
         address[] questPlayers;
         bytes4[] questGoals;
+        // needs to be an array
+        QuestParams questParams;
+        // reward logic
     }
 
-    function mint(address to) public payable publicMintPaid {
-        _mint(to, _nextId++);
+    enum QuestParams {
+
     }
 
-    // Evaluator
+    Quest[] public quests;
 
-    // Base Quest Functions
-    // do you own X NFT
-    function OwnerOfNFTTask(address ERC721contract) public returns (bool) {
+    function registerQuest() public payable {
+        return false;
+    }
+
+    // ============ EVALUATOR ============
+    
+    function evaluateQuestStatus(uint256 tokenId, Quest calldata q) public {
+        // need preflight checks (msg.sender = owner, have not previously completed quest, ownership generally etc)
+        for (uint256 i = 0; i < q.questGoals.length; i++) {
+            // staticcall && might need to concate function signature + args into bytes
+            require(this.call(q.questGoals[i], q.questParams[i]) == true, 'Quest goal not met');
+            // add reward triggers (XP, etc)
+            // mark quest completed
+        }
+    }
+
+    // ============ QUEST FUNCTIONS ============
+
+    // TODO: add all unique params to QuestParams enum && accept QuestParams as argument && unpack QuestParams into individual params
+
+    // Obtain a given NFT
+    function ownerOfNFTTask(address ERC721contract) internal returns (bool) {
         address playerAddress = msg.sender;
         ERC721 nftContract = ERC721(ERC721contract);
         if (nftContract.balanceOf(playerAddress) >= 1) {
@@ -42,8 +66,8 @@ contract QuestNFT is ERC721, Ownable, Pausable, MerkleProof {
         return false;
     }
 
-    // did you have enough of this ERC20
-    function OwnerOfERC20Task(address ERC20contract, uint256 amount) public returns (bool) {
+    // Obtain a balance of given ERC20 token
+    function ownerOfERC20Task(address ERC20contract, uint256 amount) internal returns (bool) {
         address playerAddress = msg.sender;
         ERC20 tokenContract = ERC20(ERC20contract);
         if (tokenContract.balanceOf(playerAddress) >= amount) {
@@ -52,8 +76,8 @@ contract QuestNFT is ERC721, Ownable, Pausable, MerkleProof {
         return false;
     }
 
-    // bring back a signed message from a specific address
-    function BearerOfSignedMessageTask(bytes32 _hashedMessage, uint8 _v, bytes32 _r, bytes32 _s, address questAgent) public pure returns (bool complete) {
+    // Bring back a signed message from a specific address
+    function bearerOfSignedMessageTask(bytes32 _hashedMessage, uint8 _v, bytes32 _r, bytes32 _s, address questAgent) internal pure returns (bool complete) {
         // Thank u Chainsafe Leon Do https://blog.chainsafe.io/how-to-verify-a-signed-message-in-solidity-6b3100277424
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, _hashedMessage));
@@ -63,16 +87,17 @@ contract QuestNFT is ERC721, Ownable, Pausable, MerkleProof {
         return true;
     }
     
-    // be a part of a merkle tree
-    function MemberOfMerkleTreeTask(bytes32[] calldata proof, bytes32[] calldata merkleRoot) internal returns (bool complete) {
+    // Be a part of a merkle tree
+    // use preset (per quest) merkle tree
+    function memberOfMerkleTreeTask(bytes32[] calldata proof, bytes32[] calldata merkleRoot) internal returns (bool complete) {
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
         require(MerkleProof.verify(proof, merkleRoot, leaf),'MemberOfMerkleTreeTask: proof is not valid');
         return true;
     }
 
-    // get other player to admit defeat
+    // Get other player to admit defeat
     // Message format: "I admit defeat. [tokenId] in quest [questId] at [blockNumber]."
-    function DefeatOpponentTask(uint8 _v, bytes32 _r, bytes32 _s, uint256 questId, uint256 opponentTokenId) public returns(bool) {
+    function defeatOpponentTask(uint8 _v, bytes32 _r, bytes32 _s, uint256 questId, uint256 opponentTokenId) internal returns(bool) {
         address playerAddress = msg.sender;
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes memory admission = abi.encodePacked('I admit defeat. ', opponentTokenId, ' in quest ', questId);
@@ -85,13 +110,21 @@ contract QuestNFT is ERC721, Ownable, Pausable, MerkleProof {
     }
 
     // Check if player has met an ETH balance threshold
-    function ETHMinimumBalanceTask(uint256 minimumBalance) public returns (bool completed) {
+    function ETHMinimumBalanceTask(uint256 minimumBalance) internal returns (bool completed) {
         address playerAddress = msg.sender;
         require(playerAddress.balance >= minimumBalance, "ETHMinimumBalanceTask: not enough ETH");
         return true;
     }
 
-    // Quest NFT Utility Functions
+    function completeAbstractTask() private returns (bool) {
+        return true;
+    }
+
+    // ============ UTILITIES ============
+
+    function mint(address to) public payable publicMintPaid {
+        _mint(to, _nextId++);
+    }
 
     // ============ MODIFIERS ============
 
