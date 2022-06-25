@@ -51,10 +51,10 @@ contract QuestNFT is ERC721, Ownable, Pausable {
 
     // Base Quest Functions
     // do you own X NFT
-    function OwnerOfNFTTask(address NFTcontract) public returns (bool) {
+    function OwnerOfNFTTask(address ERC721contract) public returns (bool) {
         address playerAddress = msg.sender;
-        ERC721 myNftContract = ERC721(NFTcontract);
-        if (myNftContract.balanceOf(playerAddress) >= 1) {
+        ERC721 nftContract = ERC721(ERC721contract);
+        if (nftContract.balanceOf(playerAddress) >= 1) {
             return true;
         }
         return false;
