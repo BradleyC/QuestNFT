@@ -2,6 +2,7 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
@@ -28,18 +29,23 @@ contract QuestNFT is ERC721, Ownable, Pausable, MerkleProof {
 
     // Base Quest Functions
     // do you own X NFT
-    function OwnerOfNFTTask(address NFTcontract) {
+    function OwnerOfNFTTask(address ERC721contract) public returns (bool) {
         address playerAddress = msg.sender;
-        // take playerAddress, check if playerAddress is owner in given NFT contract
-        // @JP how does basic ERC721 return if you own a token?
-        // ideally we don't need a tokenID
+        ERC721 nftContract = ERC721(ERC721contract);
+        if (nftContract.balanceOf(playerAddress) >= 1) {
+            return true;
+        }
+        return false;
     }
 
     // did you have enough of this ERC20
-    function OwnerOfERC20Task(address ERC20contract, uint256 amount) {
+    function OwnerOfERC20Task(address ERC20contract, uint256 amount) public returns (bool) {
         address playerAddress = msg.sender;
-        // take playerAddress, check if playerAddress has enough of given ERC20 contract
-        // @JP how does basic ERC20 return if you own a token?
+        ERC20 tokenContract = ERC20(ERC20contract);
+        if (tokenContract.balanceOf(playerAddress) >= amount) {
+            return true;
+        }
+        return false;
     }
 
     // bring back a signed message from a specific address
