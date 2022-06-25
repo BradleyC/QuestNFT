@@ -22,20 +22,20 @@ contract QuestNFT is ERC721, Ownable, Pausable {
 
     // Base Quest Functions
     // do you own X NFT
-    function OwnerOfNFTQuest(address NFTcontract) {
+    function OwnerOfNFTTask(address NFTcontract) {
         address playerAddress = msg.sender;
         // take playerAddress, check if playerAddress is owner in given NFT contract
         // @JP how does basic ERC721 return if you own a token?
         // ideally we don't need a tokenID
     }
     // did you have enough of this ERC20
-    function OwnerOfERC20Quest(address ERC20contract, uint256 amount) {
+    function OwnerOfERC20Task(address ERC20contract, uint256 amount) {
         address playerAddress = msg.sender;
         // take playerAddress, check if playerAddress has enough of given ERC20 contract
         // @JP how does basic ERC20 return if you own a token?
     }
     // bring back a signed message from a specific address
-    function BearerOfSignedMessageQuest(bytes32 _hashedMessage, uint8 _v, bytes32 _r, bytes32 _s) public pure returns (address) {
+    function BearerOfSignedMessageTask(bytes32 _hashedMessage, uint8 _v, bytes32 _r, bytes32 _s) public pure returns (address) {
         // Thank u Chainsafe Leon Do
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, _hashedMessage));
