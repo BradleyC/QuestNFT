@@ -1,0 +1,15 @@
+{
+  "name": "QuestNFT",
+  "version": "0.0.1",
+  "description": "Mint an NFT that can receive & accomplish Quests",
+  "main": "index.js",
+  "repository": "git@github.com:BradleyC/QuestNFT.git",
+  "author": "Bradley C <bradleyctclarke@gmail.com>",
+  "license": "MITNFA",
+  "private": false,
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.6.0",
+    "hardhat": "^2.9.9",
+    "hardhat-tracer": "^1.1.0-rc.6"
+  }
+}
