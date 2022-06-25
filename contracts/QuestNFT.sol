@@ -22,6 +22,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         bytes4[] questGoals;
         // needs to be an array
         QuestParams questParams;
+        // reward logic
     }
 
     enum QuestParams {
@@ -37,13 +38,19 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     // ============ EVALUATOR ============
     
     function evaluateQuestStatus(uint256 tokenId, Quest calldata q) public {
+        // need preflight checks (msg.sender = owner, have not previously completed quest, ownership generally etc)
         for (uint256 i = 0; i < q.questGoals.length; i++) {
             // staticcall && might need to concate function signature + args into bytes
             require(this.call(q.questGoals[i], q.questParams[i]) == true, 'Quest goal not met');
+            // add reward triggers (XP, etc)
+            // mark quest completed
         }
     }
 
     // ============ QUEST FUNCTIONS ============
+
+    // TODO: add all unique params to QuestParams enum && accept QuestParams as argument && unpack QuestParams into individual params
+
     // Obtain a given NFT
     function ownerOfNFTTask(address ERC721contract) internal returns (bool) {
         address playerAddress = msg.sender;
