@@ -17,7 +17,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     }
 
     modifier onlyTokenOwner(uint256 tokenId) {
-        require(msg.sender == ERC721.ownerOf(tokenId), 'Shields: only owner can build Shield');
+        require(msg.sender == ERC721.ownerOf(tokenId), 'QuestNFT: only owner can build Shield');
         _;
     }
 
