@@ -80,17 +80,21 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         return signer;
     }
     // be a part of a merkle tree
+    
     // get other player to admit defeat
-    function DefeatOpponentTask(address opponent, uint8 _v, bytes32 _r, bytes32 _s) public {
+    // Message format: "I admit defeat. [tokenId] in quest [questId] at [blockNumber]."
+    function DefeatOpponentTask(uint8 _v, bytes32 _r, bytes32 _s, uint256 questId, uint256 opponentTokenId) public returns(bool) {
         address playerAddress = msg.sender;
-        // take playerAddress, check if playerAddress is owner in given NFT contract
-        // create constant message hash of phrase "I admit defeat"
-        // verify opponent signed message
-        // alternative: verify signature and parse addresses from message..
-        bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, _hashedMessage));
+        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+        bytes memory admission = abi.encodePacked('I admit defeat. ', opponentTokenId, ' in quest ', questId);
+        bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, admission));
         address signer = ecrecover(prefixedHashMessage, _v, _r, _s);
-        // (incomplete)
+        // TODO: This is broken because player could transfer their token after signing.
+        //       Fix: override transfer and use governor bravo style snapshots as of block numbers.
+        require(signer == ownerOf(opponentTokenId), "NO!");
+        return true;
     }
+
     // ~~nonce above X~~
     // do you own > X amount of ETH
 
