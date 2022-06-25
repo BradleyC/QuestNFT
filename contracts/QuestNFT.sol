@@ -64,7 +64,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     function OwnerOfERC20Task(address ERC20contract, uint256 amount) public returns (bool) {
         address playerAddress = msg.sender;
         ERC20 tokenContract = ERC20(ERC20contract);
-        if (tokenContract.balanceOf(playerAddress) >= 1) {
+        if (tokenContract.balanceOf(playerAddress) >= amount) {
             return true;
         }
         return false;
