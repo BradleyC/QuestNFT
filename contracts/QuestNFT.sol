@@ -16,18 +16,21 @@ contract QuestNFT is ERC721, Ownable, Pausable {
 
     // ============ QUEST REGISTRY ============
 
-    mapping(uint256 => uint256) xpByTokenId;
-    mapping(uint256 => mapping(uint256 => bool)) questCompletedByTokenId;
+    mapping(uint256 => uint256) public xpByTokenId;
+    mapping(uint256 => mapping(uint256 => bool)) public isQuestCompletedByTokenId;
+    mapping(uint256 => uint256) public questCompletedCountByTokenId;
+    mapping(uint256 => uint256[]) public questsInProgressPerToken;
+    mapping (uint256 => mapping (uint256 => bool)) isTokenIdBannedFromQuest;
 
     struct Quest {
         uint256 questId;
         address questCreator;
-        uint256 prerequisiteQuest;
+        uint256 prerequisiteQuestId;
         uint256 questRewardXP;
         address[] questPlayers;
-        bytes4[] questGoals;
-        // needs to be an array
-        QuestParams questParams;
+        bytes32[] questDescription;
+        bytes4[] questTasks;
+        TaskParams[] taskParams;
         // reward logic
     }
 
@@ -45,19 +48,26 @@ contract QuestNFT is ERC721, Ownable, Pausable {
 
     // ============ EVALUATOR ============
     
-    function evaluateQuestStatus(uint256 tokenId, Quest calldata q) public {
-        // need preflight checks (msg.sender = owner, have not previously completed quest, ownership generally etc)
-        for (uint256 i = 0; i < q.questGoals.length; i++) {
-            // staticcall && might need to concate function signature + args into bytes
-            require(this.call(q.questGoals[i], q.questParams[i]) == true, 'Quest goal not met');
-            // add reward triggers (XP, etc)
-            // mark quest completed
+    function evaluateQuestStatus(uint256 tokenId, uint256 questId) public {
+        Quest memory q = quests[questId];
+        require(isQuestCompletedByTokenId[tokenId][q.prerequisiteQuestId] == true, 'Must complete prerequisite qeust');
+        require(!isTokenIdBannedFromQuest[tokenId][questId] && !isQuestCompletedByTokenId[tokenId][questId], 'Already completed or BANNED');
+        require(msg.sender == ownerOf(tokenId), 'Only owner can evaluate quest status');
+        for (uint256 i = 0; i < q.questTasks.length; i++) {
+            TaskParams p = q.taskParams[i];
+            // might need to concatenate function signature + args into bytes
+            // pass in message.sender
+            require(this.call(q.questTasks[i], p) == true, 'Quest goal not met');
+            xpByTokenId[tokenId] += q.questRewardXP;
+            questcompletedByTokenId[tokenId][questId] = true;
+            questCompletedCountByTokenId[tokenId]++;
+            }
         }
     }
 
     // ============ QUEST FUNCTIONS ============
 
-    // TODO: add all unique params to QuestParams enum && accept QuestParams as argument && unpack QuestParams into individual params
+    // TODO: add all unique params to TaskParams enum && accept TaskParams as argument && unpack TaskParams into individual params
 
     // Obtain a given NFT
     function ownerOfNFTTask(address ERC721contract) internal returns (bool) {
@@ -126,7 +136,8 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     // ============ UTILITIES ============
 
     function mint(address to) public payable publicMintPaid {
-        _mint(to, _nextId++);
+        _mint(to, _nextId);
+        _nextId++;
     }
 
     // ============ MODIFIERS ============
