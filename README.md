@@ -9,7 +9,9 @@ Each QuestNFT is rendered as on-chain SVG displaying its XP and number of quests
 
 ## Game Masters
 
-Game masters are responsible for adding new quests. Only the owner of the contract can add and remove game masters.
+There is a `GameMaster` role within a QuestNFT contract. Game masters are responsible for adding new quests.
+
+Only the owner of the contract can add and remove game masters.
 
 ## Quests
 
