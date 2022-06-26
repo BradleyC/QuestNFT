@@ -153,6 +153,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     function ownerOfNFTTask(MergedParams m) internal returns (bool completed) {
         address playerAddress = m.sender;
         uint256 amount = m.amount;
+        address ERC721Contract = m.foreignAddress;
         ERC721 nftContract = ERC721(ERC721contract);
         if (nftContract.balanceOf(playerAddress) >= amount) {
             return true;
@@ -192,7 +193,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     // use preset (per quest) merkle tree
     function memberOfMerkleTreeTask(MergedParams m) internal returns (bool completed) {
         bytes32[] calldata proof = m.proof[];
-        bytes32[] calldata merkleRoot = m.merkleRoot;
+        bytes32 calldata merkleRoot = m.merkleRoot;
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
         require(MerkleProof.verify(proof, merkleRoot, leaf),'MemberOfMerkleTreeTask: proof is not valid');
         return true;
