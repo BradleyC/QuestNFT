@@ -57,6 +57,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
             require(this.call(q.questTasks[i], p) == true, 'Quest goal not met');
             xpByTokenId[tokenId] += q.questRewardXP;
             questcompletedByTokenId[tokenId][questId] = true;
+            questCompletedCountByTokenId[tokenId]++;
             }
         }
     }
