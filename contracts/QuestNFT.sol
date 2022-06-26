@@ -146,7 +146,10 @@ contract QuestNFT is ERC721, Ownable, Pausable {
             }
             for (uint256 i = 0; i < q.questTasks.length; i++) {
                 // might need to concatenate function signature + args into bytes
-                require(address(this).call(abi.encodePacked(q.questTasks[i], m[i])), 'Quest goal not met');
+                bool qBool;
+                bytes memory result;
+                (qBool, result) = address(this).call(abi.encodeWithSelector(q.questTasks[i], m[i]));
+                require(qBool, 'Task failed');
             }
             xpByTokenId[tokenId] += q.questRewardXP;
             isQuestCompletedByTokenId[tokenId][questId] = true;
@@ -158,7 +161,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     // TODO: add all unique params to TaskParams enum && accept TaskParams as argument && unpack TaskParams into individual params
 
     // Obtain a given NFT
-    function ownerOfNFTTask(MergedParams calldata m) internal returns (bool completed) {
+    function ownerOfNFTTask(MergedParams calldata m) internal view returns (bool completed) {
         address playerAddress = m.sender;
         uint256 amount = m.amount;
         address ERC721Contract = m.foreignAddress;
@@ -170,7 +173,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     }
 
     // Obtain a balance of given ERC20 token
-    function ownerOfERC20Task(MergedParams calldata m) internal returns (bool completed) {
+    function ownerOfERC20Task(MergedParams calldata m) internal view returns (bool completed) {
         address playerAddress = m.sender;
         address ERC20contract = m.foreignAddress;
         uint256 amount = m.amount;
@@ -199,7 +202,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     
     // Be a part of a merkle tree
     // use preset (per quest) merkle tree
-    function memberOfMerkleTreeTask(MergedParams calldata m) internal returns (bool completed) {
+    function memberOfMerkleTreeTask(MergedParams calldata m) internal view returns (bool completed) {
         bytes32[] calldata proof = m.proof;
         bytes32 merkleRoot = m.merkleRoot;
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
@@ -216,7 +219,6 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         bytes32 _s = m._s;
         uint256 questId = m.questId;
         uint256 opponentTokenId = m.amount;
-        address playerAddress = m.sender;
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes memory admission = abi.encodePacked('I admit defeat. ', Strings.toString(opponentTokenId), ' in quest ', Strings.toString(questId));
         bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, admission));
@@ -231,7 +233,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     }
 
     // Check if player has met an ETH balance threshold
-    function ETHMinimumBalanceTask(MergedParams calldata m) internal returns (bool completed) {
+    function ETHMinimumBalanceTask(MergedParams calldata m) internal view returns (bool completed) {
         uint256 minimumBalance = m.amount;
         address playerAddress = m.sender;
         require(playerAddress.balance >= minimumBalance, "ETHMinimumBalanceTask: not enough ETH");
