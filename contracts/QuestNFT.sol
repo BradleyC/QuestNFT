@@ -126,9 +126,9 @@ contract QuestNFT is ERC721, Ownable, Pausable {
             require(isQuestCompletedByTokenId[tokenId][q.prerequisiteQuestId] == true, 'Must complete prerequisite quest');
             require(!isTokenIdBannedFromQuest[tokenId][questId] && !isQuestCompletedByTokenId[tokenId][questId], 'Already completed or BANNED');
             require(msg.sender == ownerOf(tokenId), 'Only owner can evaluate quest status');
-            TaskParams[] memory p = quests[questId].taskParams;
+            TaskParams[] memory p = q.taskParams;
             MergedParams[] memory m;
-            for (uint256 i = 0; i < p.length; i++) {
+            for (uint256 i = 0; i < q.questTasks.length; i++) {
                 // from storage
                 m[i].amount = p[i].amount;
                 m[i].merkleRoot = p[i].merkleRoot;
@@ -155,8 +155,6 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     }
 
     // ============ QUEST FUNCTIONS ============
-
-    // TODO: add all unique params to TaskParams enum && accept TaskParams as argument && unpack TaskParams into individual params
 
     // Obtain a given NFT
     function ownerOfNFTTask(MergedParams calldata m) internal view returns (bool completed) {
