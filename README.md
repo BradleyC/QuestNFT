@@ -1,5 +1,10 @@
 # Quest NFT
+
+## One-liner
 Smart contract framework for quest-based games. Players get NFT accounts that they can use to complete quests and earn XP.
+
+## Overview
+QuestNFT is a smart contract implementation that allows anyone to create and run a quest-based game. In QuestNFT, players mint NFTs which are used as their on-chain save files. These NFTs can earn XP as players complete various quests. The power of QuestNFT is a flexible and composable quest structure that allows the game masters to create a variety of challenges for players. QuestNFT provides built-in task types that a game master can mix and match in a given quest. Game masters can keep adding more quests indefinitely, allowing for an ongoing game that evolves over time.
 
 ## NFTs
 
