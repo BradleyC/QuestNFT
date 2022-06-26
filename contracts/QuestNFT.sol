@@ -65,9 +65,10 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     function registerQuest(
             uint256 xp, 
             bytes32[] calldata questDescription, 
-            uint256[] paramAmount, 
+            uint256[] calldata paramAmount, 
             bytes32[] calldata root, 
-            address[] fAddress) 
+            address[] calldata fAddress,
+            bytes4[] calldata tasks) 
             public payable returns (bool success) {
                 require(isGameMaster(msg.sender), 'only the wisened may create quests');
                 require(msg.value >= registerQuestCost);
@@ -91,17 +92,17 @@ contract QuestNFT is ERC721, Ownable, Pausable {
 
     // ============ EVALUATOR ============
     
-    function getQuestTasks(uint256 questId) view returns (bytes4[] tasks) {
+    function getQuestTasks(uint256 questId) public view returns (bytes4[] tasks) {
         require(questId <= quests.length);
         return quests[questId].questTasks;
     }
 
-    function getQuestTaskParams(uint256 questId) view returns (TaskParams[]) {
+    function getQuestTaskParams(uint256 questId) public view returns (TaskParams[]) {
         require(questId <= quests.length);
         return quests[questId].taskParams;
     }
 
-    function getTaskCount(uint256 questId) view returns (uint256 count) {
+    function getTaskCount(uint256 questId) public view returns (uint256 count) {
         require(questId <= quests.length);
         return quests[questId].questTasks.length;
     }
@@ -110,12 +111,12 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         uint256 tokenId, 
         uint256 questId, 
         bytes32[[]] calldata proof, 
-        bytes32[] calldata msg, 
+        bytes32[] calldata message, 
         bytes32[] calldata r, 
         bytes32[] calldata s, 
         uint8[] v) public {
             Quest memory q = quests[questId];
-            require(isQuestCompletedByTokenId[tokenId][q.prerequisiteQuestId] == true, 'Must complete prerequisite qeust');
+            require(isQuestCompletedByTokenId[tokenId][q.prerequisiteQuestId] == true, 'Must complete prerequisite quest');
             require(!isTokenIdBannedFromQuest[tokenId][questId] && !isQuestCompletedByTokenId[tokenId][questId], 'Already completed or BANNED');
             require(msg.sender == ownerOf(tokenId), 'Only owner can evaluate quest status');
             TaskParams[] memory p = quests[questId].taskParams;
@@ -126,8 +127,8 @@ contract QuestNFT is ERC721, Ownable, Pausable {
                 m[i].merkleRoot = p[i].merkleRoot;
                 m[i].foreignAddress = p[i].foreignAddress;
                 // from input
-                m[i].proof[] = proof[][i];
-                m[i].hashedMessage = msg[i];
+                m[i].proof = proof[][i];
+                m[i].hashedMessage = message[i];
                 m[i]._r = r[i];
                 m[i]._s = s[i];
                 m[i]._v = v[i];
@@ -139,11 +140,10 @@ contract QuestNFT is ERC721, Ownable, Pausable {
             for (uint256 i = 0; i < q.questTasks.length; i++) {
                 // might need to concatenate function signature + args into bytes
                 require(this.call(q.questTasks[i], m[i]) == true, 'Quest goal not met');
-                }
-            xpByTokenId[tokenId] += q.questRewardXP;
-            questcompletedByTokenId[tokenId][questId] = true;
-            questCompletedCountByTokenId[tokenId]++;
             }
+            xpByTokenId[tokenId] += q.questRewardXP;
+            isQuestCompletedByTokenId[tokenId][questId] = true;
+            questCompletedCountByTokenId[tokenId]++;
     }
 
     // ============ QUEST FUNCTIONS ============
@@ -155,7 +155,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         address playerAddress = m.sender;
         uint256 amount = m.amount;
         address ERC721Contract = m.foreignAddress;
-        ERC721 nftContract = ERC721(ERC721contract);
+        ERC721 nftContract = ERC721(ERC721Contract);
         if (nftContract.balanceOf(playerAddress) >= amount) {
             return true;
         }
@@ -219,7 +219,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         require(signer == ownerOf(opponentTokenId), "NO!");
         // forward to funbug reward contract (?)
         xpByTokenId[opponentTokenId] -= m.questXp;
-        isTokenBannedFromQuest[questId][opponentTokenId] = true;
+        isTokenIdBannedFromQuest[questId][opponentTokenId] = true;
         return true;
     }
 
