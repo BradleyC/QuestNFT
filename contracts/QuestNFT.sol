@@ -59,8 +59,15 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         uint256 questId;
         uint256 questXp;
     }
-
+    
     Quest[] public quests;
+
+    constructor(uint256 _publicMintPrice, uint256 _registerQuestCost) ERC721("QuestNFT", "QNFT") {
+        isGameMaster[msg.sender] = true;
+        publicMintPrice = _publicMintPrice;
+        registerQuestCost = _registerQuestCost;
+        _nextId = 0;
+    }
 
     function registerQuest(
             uint256 xp, 
@@ -70,7 +77,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
             address[] calldata fAddress,
             bytes4[] calldata tasks) 
             public payable returns (bool success) {
-                require(isGameMaster(msg.sender), 'only the wisened may create quests');
+                require(isGameMaster[msg.sender], 'only the wisened may create quests');
                 require(msg.value >= registerQuestCost);
                 require(xp < 25, 'no person levels up that quickly');
                 Quest memory q;
@@ -78,7 +85,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
                 q.questCreator = msg.sender;
                 q.questRewardXP = xp;
                 q.questDescription = questDescription;
-                q.questTasks[] = tasks;
+                q.questTasks = tasks;
                 TaskParams[] memory p;
                 for (uint256 i = 0; i < paramAmount.length; i++) {
                     p[i].amount = paramAmount[i];
@@ -92,12 +99,12 @@ contract QuestNFT is ERC721, Ownable, Pausable {
 
     // ============ EVALUATOR ============
     
-    function getQuestTasks(uint256 questId) public view returns (bytes4[] tasks) {
+    function getQuestTasks(uint256 questId) public view returns (bytes4[] memory tasks) {
         require(questId <= quests.length);
         return quests[questId].questTasks;
     }
 
-    function getQuestTaskParams(uint256 questId) public view returns (TaskParams[]) {
+    function getQuestTaskParams(uint256 questId) public view returns (TaskParams[] memory params) {
         require(questId <= quests.length);
         return quests[questId].taskParams;
     }
@@ -110,24 +117,24 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     function evaluateQuestStatus(
         uint256 tokenId, 
         uint256 questId, 
-        bytes32[[]] calldata proof, 
+        bytes32[][] calldata proof, 
         bytes32[] calldata message, 
         bytes32[] calldata r, 
         bytes32[] calldata s, 
-        uint8[] v) public {
+        uint8[] calldata v) public {
             Quest memory q = quests[questId];
             require(isQuestCompletedByTokenId[tokenId][q.prerequisiteQuestId] == true, 'Must complete prerequisite quest');
             require(!isTokenIdBannedFromQuest[tokenId][questId] && !isQuestCompletedByTokenId[tokenId][questId], 'Already completed or BANNED');
             require(msg.sender == ownerOf(tokenId), 'Only owner can evaluate quest status');
             TaskParams[] memory p = quests[questId].taskParams;
-            MergedParams memory m;
+            MergedParams[] memory m;
             for (uint256 i = 0; i < p.length; i++) {
                 // from storage
                 m[i].amount = p[i].amount;
                 m[i].merkleRoot = p[i].merkleRoot;
                 m[i].foreignAddress = p[i].foreignAddress;
                 // from input
-                m[i].proof = proof[][i];
+                m[i].proof = proof[i];
                 m[i].hashedMessage = message[i];
                 m[i]._r = r[i];
                 m[i]._s = s[i];
@@ -139,7 +146,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
             }
             for (uint256 i = 0; i < q.questTasks.length; i++) {
                 // might need to concatenate function signature + args into bytes
-                require(this.call(q.questTasks[i], m[i]) == true, 'Quest goal not met');
+                require(address(this).call(abi.encodePacked(q.questTasks[i], m[i])), 'Quest goal not met');
             }
             xpByTokenId[tokenId] += q.questRewardXP;
             isQuestCompletedByTokenId[tokenId][questId] = true;
@@ -151,7 +158,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     // TODO: add all unique params to TaskParams enum && accept TaskParams as argument && unpack TaskParams into individual params
 
     // Obtain a given NFT
-    function ownerOfNFTTask(MergedParams m) internal returns (bool completed) {
+    function ownerOfNFTTask(MergedParams calldata m) internal returns (bool completed) {
         address playerAddress = m.sender;
         uint256 amount = m.amount;
         address ERC721Contract = m.foreignAddress;
@@ -163,7 +170,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     }
 
     // Obtain a balance of given ERC20 token
-    function ownerOfERC20Task(MergedParams m) internal returns (bool completed) {
+    function ownerOfERC20Task(MergedParams calldata m) internal returns (bool completed) {
         address playerAddress = m.sender;
         address ERC20contract = m.foreignAddress;
         uint256 amount = m.amount;
@@ -175,7 +182,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     }
 
     // Bring back a signed message from a specific address
-    function bearerOfSignedMessageTask(MergedParams m) internal pure returns (bool completed) {
+    function bearerOfSignedMessageTask(MergedParams calldata m) internal pure returns (bool completed) {
         bytes32 _hashedMessage = m.hashedMessage;
         uint8 _v = m._v;
         bytes32 _r = m._r;
@@ -192,9 +199,9 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     
     // Be a part of a merkle tree
     // use preset (per quest) merkle tree
-    function memberOfMerkleTreeTask(MergedParams m) internal returns (bool completed) {
+    function memberOfMerkleTreeTask(MergedParams calldata m) internal returns (bool completed) {
         bytes32[] calldata proof = m.proof;
-        bytes32 calldata merkleRoot = m.merkleRoot;
+        bytes32 merkleRoot = m.merkleRoot;
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
         require(MerkleProof.verify(proof, merkleRoot, leaf),'MemberOfMerkleTreeTask: proof is not valid');
         return true;
@@ -203,7 +210,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
 
     // Get other player to admit defeat
     // Message format: "I admit defeat. [tokenId] in quest [questId]."
-    function defeatOpponentTask(MergedParams m) internal returns(bool completed) {
+    function defeatOpponentTask(MergedParams calldata m) internal returns(bool completed) {
         uint8 _v = m._v;
         bytes32 _r = m._r;
         bytes32 _s = m._s;
@@ -224,7 +231,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     }
 
     // Check if player has met an ETH balance threshold
-    function ETHMinimumBalanceTask(MergedParams m) internal returns (bool completed) {
+    function ETHMinimumBalanceTask(MergedParams calldata m) internal returns (bool completed) {
         uint256 minimumBalance = m.amount;
         address playerAddress = m.sender;
         require(playerAddress.balance >= minimumBalance, "ETHMinimumBalanceTask: not enough ETH");
@@ -232,9 +239,9 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         return true;
     }
 
-    function completeAbstractTask(MergedParams m) private returns (bool) {
+    function completeAbstractTask(MergedParams calldata m) private returns (bool) {
         IAbstractTask abstractTaskContract = IAbstractTask(m.foreignAddress);
-        bytes32 abstractTaskData = m.proof;
+        bytes32[] memory abstractTaskData = m.proof;
         require(abstractTaskContract.evaluate(abstractTaskData), "AbstractTask: Did not pass");
         return true;
     }
