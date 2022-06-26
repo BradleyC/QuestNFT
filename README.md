@@ -1,9 +1,9 @@
 # Quest NFT
 Smart contract framework for quest-based games. Players get NFT accounts that they can use to complete quests and earn XP.
 
-### Quest NFTs
+### NFTs
 
-The QuestNFT.sol contract allows players to mint QuestNFTs. Each NFT acts like a player's save file and keeps track of its XP completed quests.
+The QuestNFT.sol contract allows players to mint QuestNFTs. Each NFT acts like a player's save file and keeps track of its XP and completed quests.
 
 Each QuestNFT is rendered as on-chain SVG displaying its XP and number of quests completed.
 
@@ -13,9 +13,30 @@ Quests can be added by the owner of the the QuestNFT instance, providing new cha
 
 Each Quest is made up of one or more Tasks. Tasks are functions that take in parameters and evaluate to True or False based on their own logic.
 
-In order to complete a Quest, a player must call the `evaluateQuestStatus` function, passing in their `tokenId` and ensuring that all Tasks within the Quest return True simultaneously.
+In order to complete a Quest, a player must call the `evaluateQuestStatus` function, passing in their `tokenId` and ensuring that all Tasks within the Quest return `true` simultaneously.
 
-Each Quest is worth a specific amount of XP, set by the contract owner. When a player completes a quest, XP is added to their tokenId.
+Each Quest is worth a specific amount of XP, set by the contract owner. When a player completes a quest, XP is added to their `tokenId`.
+
+Quests are stored using the following struct:
+```
+struct Quest {
+        // Index of this quest in the quests array
+        uint256 questId;
+        // Creator of this quest
+        address questCreator;
+        // Optional: a quest you must have completed before completing this quest
+        uint256 prerequisiteQuestId;
+        // How much XP a player gets for completing this quest
+        uint256 questRewardXP;
+        // Human readable string describing this quest
+        bytes32[] questDescription;
+        // Function signatures of Tasks in this quest
+        bytes4[] questTasks;
+        // Information required to evaluate Tasks in this quest
+        TaskParams[] taskParams;
+        // reward logic
+    }
+```
 
 ### Tasks
 
