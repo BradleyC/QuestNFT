@@ -101,10 +101,6 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         return quests[questId].questTasks.length;
     }
 
-    function mergeTaskParams(uint256 questId, ) internal {
-
-    }
-
     function evaluateQuestStatus(
         uint256 tokenId, 
         uint256 questId, 
