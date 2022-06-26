@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MITNFA
 pragma solidity ^0.8.4;
 
+import "./IAbstractTask.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -192,7 +193,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     // Be a part of a merkle tree
     // use preset (per quest) merkle tree
     function memberOfMerkleTreeTask(MergedParams m) internal returns (bool completed) {
-        bytes32[] calldata proof = m.proof[];
+        bytes32[] calldata proof = m.proof;
         bytes32 calldata merkleRoot = m.merkleRoot;
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
         require(MerkleProof.verify(proof, merkleRoot, leaf),'MemberOfMerkleTreeTask: proof is not valid');
@@ -231,7 +232,10 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         return true;
     }
 
-    function completeAbstractTask() private returns (bool) {
+    function completeAbstractTask(MergedParams m) private returns (bool) {
+        IAbstractTask abstractTaskContract = IAbstractTask(m.foreignAddress);
+        bytes32 abstractTaskData = m.proof;
+        require(abstractTaskContract.evaluate(abstractTaskData), "AbstractTask: Did not pass");
         return true;
     }
 
