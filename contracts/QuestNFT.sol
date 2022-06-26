@@ -32,9 +32,9 @@ contract QuestNFT is ERC721, Ownable, Pausable {
 
     struct QuestParams {
         bytes32[] proof; // for merkle root OR abstract task
-        bytes32[] merkleRoot; // for merkle root OR abstract task
-        bytes32[] hashedMessage; // for signed message
         uint256 amount; // amount for ERC20 or tokenId for defeating opponent or minimum ETH balance
+        bytes32 merkleRoot; // for merkle root OR abstract task
+        bytes32 hashedMessage; // for signed message
         bytes32 _r;
         bytes32 _s;
         address foreignAddress; // for ERC721 contract or ERC20 contract or questAgent
@@ -103,7 +103,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     }
 
     // Get other player to admit defeat
-    // Message format: "I admit defeat. [tokenId] in quest [questId] at [blockNumber]."
+    // Message format: "I admit defeat. [tokenId] in quest [questId]."
     function defeatOpponentTask(uint8 _v, bytes32 _r, bytes32 _s, uint256 questId, uint256 opponentTokenId) internal returns(bool) {
         address playerAddress = msg.sender;
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
