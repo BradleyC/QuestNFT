@@ -3,6 +3,7 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
@@ -107,7 +108,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     function defeatOpponentTask(uint8 _v, bytes32 _r, bytes32 _s, uint256 questId, uint256 opponentTokenId) internal returns(bool) {
         address playerAddress = msg.sender;
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes memory admission = abi.encodePacked('I admit defeat. ', opponentTokenId, ' in quest ', questId);
+        bytes memory admission = abi.encodePacked('I admit defeat. ', Strings.toString(opponentTokenId), ' in quest ', Strings.toString(questId));
         bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, admission));
         address signer = ecrecover(prefixedHashMessage, _v, _r, _s);
         // TODO: This is broken because player could transfer their token after signing.
