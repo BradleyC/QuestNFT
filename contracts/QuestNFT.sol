@@ -68,7 +68,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
             public payable returns (bool success) {
                 require(isGameMaster(msg.sender), 'only the wisened may create quests');
                 require(msg.value >= registerQuestCost);
-                require(xp > 25, 'no person levels up that quickly');
+                require(xp < 25, 'no person levels up that quickly');
                 Quest memory q;
                 q.questId = quests.length + 1;
                 q.questCreator = msg.sender;
@@ -77,9 +77,9 @@ contract QuestNFT is ERC721, Ownable, Pausable {
                 q.questTasks[] = tasks;
                 TaskParams[] memory p;
                 for (uint256 i = 0; i < paramAmount.length; i++) {
-                    paramAmount[i] = p[i].amount;
-                    root[i] = p[i].merkleRoot;
-                    fAddress[i] = p[i].foreignAddress;
+                    p[i].amount = paramAmount[i];
+                    p[i].merkleRoot = root[i];
+                    p[i].foreignAddress = fAddress[i];
                 }
                 q.taskParams = p;
                 quests.push(q);
