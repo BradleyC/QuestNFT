@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import 'base64-sol/base64.sol';
 
-// TODO: refactor evaluator functions
+// TODO: constructor - add owner as GM & set prices
 
 contract QuestNFT is ERC721, Ownable, Pausable {
     uint256 public publicMintPrice;
@@ -55,6 +55,8 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         uint8 _v; // all 3 for signed message or admitting defeat
         address sender;
         uint256 tokenId;
+        uint256 questId;
+        uint256 questXp;
     }
 
     Quest[] public quests;
@@ -130,6 +132,8 @@ contract QuestNFT is ERC721, Ownable, Pausable {
                 m[i]._v = v[i];
                 m[i].sender = msg.sender;
                 m[i].tokenId = tokenId;
+                m[i].questId = questId;
+                m[i].questXp = q.questRewardXP;
             }
             for (uint256 i = 0; i < q.questTasks.length; i++) {
                 // might need to concatenate function signature + args into bytes
@@ -146,18 +150,22 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     // TODO: add all unique params to TaskParams enum && accept TaskParams as argument && unpack TaskParams into individual params
 
     // Obtain a given NFT
-    function ownerOfNFTTask(address ERC721contract) internal returns (bool completed) {
-        address playerAddress = msg.sender;
+    function ownerOfNFTTask(MergedParams m) internal returns (bool completed) {
+        address playerAddress = m.sender;
+        uint256 amount = m.amount;
+        address ERC721Contract = m.foreignAddress;
         ERC721 nftContract = ERC721(ERC721contract);
-        if (nftContract.balanceOf(playerAddress) >= 1) {
+        if (nftContract.balanceOf(playerAddress) >= amount) {
             return true;
         }
         return false;
     }
 
     // Obtain a balance of given ERC20 token
-    function ownerOfERC20Task(address ERC20contract, uint256 amount) internal returns (bool completed) {
-        address playerAddress = msg.sender;
+    function ownerOfERC20Task(MergedParams m) internal returns (bool completed) {
+        address playerAddress = m.sender;
+        address ERC20contract = m.foreignAddress;
+        uint256 amount = m.amount;
         ERC20 tokenContract = ERC20(ERC20contract);
         if (tokenContract.balanceOf(playerAddress) >= amount) {
             return true;
@@ -166,7 +174,12 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     }
 
     // Bring back a signed message from a specific address
-    function bearerOfSignedMessageTask(bytes32 _hashedMessage, uint8 _v, bytes32 _r, bytes32 _s, address questAgent) internal pure returns (bool completed) {
+    function bearerOfSignedMessageTask(MergedParams m) internal pure returns (bool completed) {
+        bytes32 _hashedMessage = m.hashedMessage;
+        uint8 _v = m._v;
+        bytes32 _r = m._r;
+        bytes32 _s = m._s;
+        address questAgent = m.foreignAddress;
         // Thank u Chainsafe Leon Do https://blog.chainsafe.io/how-to-verify-a-signed-message-in-solidity-6b3100277424
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, _hashedMessage));
@@ -178,7 +191,9 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     
     // Be a part of a merkle tree
     // use preset (per quest) merkle tree
-    function memberOfMerkleTreeTask(bytes32[] calldata proof, bytes32[] calldata merkleRoot) internal returns (bool completed) {
+    function memberOfMerkleTreeTask(MergedParams m) internal returns (bool completed) {
+        bytes32[] calldata proof = m.proof[];
+        bytes32 calldata merkleRoot = m.merkleRoot;
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
         require(MerkleProof.verify(proof, merkleRoot, leaf),'MemberOfMerkleTreeTask: proof is not valid');
         return true;
@@ -187,8 +202,13 @@ contract QuestNFT is ERC721, Ownable, Pausable {
 
     // Get other player to admit defeat
     // Message format: "I admit defeat. [tokenId] in quest [questId]."
-    function defeatOpponentTask(uint8 _v, bytes32 _r, bytes32 _s, uint256 questId, uint256 opponentTokenId) internal returns(bool completed) {
-        address playerAddress = msg.sender;
+    function defeatOpponentTask(MergedParams m) internal returns(bool completed) {
+        uint8 _v = m._v;
+        bytes32 _r = m._r;
+        bytes32 _s = m._s;
+        uint256 questId = m.questId;
+        uint256 opponentTokenId = m.amount;
+        address playerAddress = m.sender;
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes memory admission = abi.encodePacked('I admit defeat. ', Strings.toString(opponentTokenId), ' in quest ', Strings.toString(questId));
         bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, admission));
@@ -197,15 +217,15 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         //       Fix: override transfer and use governor bravo style snapshots as of block numbers.
         require(signer == ownerOf(opponentTokenId), "NO!");
         // forward to funbug reward contract (?)
-        // TODO: change to quest XP value
-        xpByTokenId[opponentTokenId] -= 25;
+        xpByTokenId[opponentTokenId] -= m.questXp;
         isTokenBannedFromQuest[questId][opponentTokenId] = true;
         return true;
     }
 
     // Check if player has met an ETH balance threshold
-    function ETHMinimumBalanceTask(uint256 minimumBalance) internal returns (bool completed) {
-        address playerAddress = msg.sender;
+    function ETHMinimumBalanceTask(MergedParams m) internal returns (bool completed) {
+        uint256 minimumBalance = m.amount;
+        address playerAddress = m.sender;
         require(playerAddress.balance >= minimumBalance, "ETHMinimumBalanceTask: not enough ETH");
 
         return true;
