@@ -143,7 +143,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
                 m[i].tokenId = tokenId;
                 m[i].questId = questId;
                 m[i].questXp = q.questRewardXP;
-            }
+            } 
             for (uint256 i = 0; i < q.questTasks.length; i++) {
                 // might need to concatenate function signature + args into bytes
                 bool qBool;
@@ -151,9 +151,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
                 (qBool, result) = address(this).call(abi.encodeWithSelector(q.questTasks[i], m[i]));
                 require(qBool, 'Task failed');
             }
-            xpByTokenId[tokenId] += q.questRewardXP;
-            isQuestCompletedByTokenId[tokenId][questId] = true;
-            questCompletedCountByTokenId[tokenId]++;
+            updateTokenScore(tokenId, questId, q.questRewardXP);
     }
 
     // ============ QUEST FUNCTIONS ============
@@ -260,6 +258,12 @@ contract QuestNFT is ERC721, Ownable, Pausable {
 
     function removeGameMaster(address gm) public onlyOwner {
         isGameMaster[gm] = false;
+    }
+
+    function updateTokenScore(uint256 tokenId, uint256 questId, uint256 xp) internal {
+        xpByTokenId[tokenId] += xp;
+        isQuestCompletedByTokenId[tokenId][questId] = true;
+        questCompletedCountByTokenId[tokenId]++;
     }
 
     // ============ MODIFIERS ============
