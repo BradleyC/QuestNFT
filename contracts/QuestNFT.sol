@@ -167,10 +167,11 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         svg = abi.encodePacked(
             '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" style="background:#000"><rect fill="green" x="0" y="0" width="300" height="50"></rect><text x="20" y="33" font-size="22" fill="white">Quest NFT #',
             tokenId,
+            '</text><text x="20" y="240" font-size="22" fill="white">Quests completed: ',
+            questCompletedCountByTokenId[tokenId],
             '</text><text x="20" y="280" font-size="22" fill="white">Current XP: ',
             xpByTokenId[tokenId],
             '</text></svg>'
-            '"</text></svg>'
         );
     }
     
