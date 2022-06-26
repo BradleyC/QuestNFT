@@ -65,9 +65,10 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     function registerQuest(
             uint256 xp, 
             bytes32[] calldata questDescription, 
-            uint256[] paramAmount, 
+            uint256[] calldata paramAmount, 
             bytes32[] calldata root, 
-            address[] fAddress) 
+            address[] calldata fAddress,
+            bytes4[] calldata tasks) 
             public payable returns (bool success) {
                 require(isGameMaster(msg.sender), 'only the wisened may create quests');
                 require(msg.value >= registerQuestCost);
@@ -110,7 +111,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         uint256 tokenId, 
         uint256 questId, 
         bytes32[[]] calldata proof, 
-        bytes32[] calldata msg, 
+        bytes32[] calldata message, 
         bytes32[] calldata r, 
         bytes32[] calldata s, 
         uint8[] v) public {
@@ -126,8 +127,8 @@ contract QuestNFT is ERC721, Ownable, Pausable {
                 m[i].merkleRoot = p[i].merkleRoot;
                 m[i].foreignAddress = p[i].foreignAddress;
                 // from input
-                m[i].proof[] = proof[][i];
-                m[i].hashedMessage = msg[i];
+                m[i].proof = proof[][i];
+                m[i].hashedMessage = message[i];
                 m[i]._r = r[i];
                 m[i]._s = s[i];
                 m[i]._v = v[i];
@@ -154,7 +155,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         address playerAddress = m.sender;
         uint256 amount = m.amount;
         address ERC721Contract = m.foreignAddress;
-        ERC721 nftContract = ERC721(ERC721contract);
+        ERC721 nftContract = ERC721(ERC721Contract);
         if (nftContract.balanceOf(playerAddress) >= amount) {
             return true;
         }
