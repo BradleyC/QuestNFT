@@ -35,14 +35,9 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     }
 
     struct QuestParams {
-        bytes32[] proof; // for merkle root OR abstract task
         uint256 amount; // amount for ERC20 or tokenId for defeating opponent or minimum ETH balance
         bytes32 merkleRoot; // for merkle root OR abstract task
-        bytes32 hashedMessage; // for signed message
-        bytes32 _r;
-        bytes32 _s;
         address foreignAddress; // for ERC721 contract or ERC20 contract or questAgent
-        uint8 _v; // all 3 for signed message or admitting defeat
     }
 
     Quest[] public quests;
