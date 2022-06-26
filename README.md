@@ -19,7 +19,9 @@ A quest is an on-chain mission. Quests can be added by game masters, providing n
 
 Each Quest is made up of one or more Tasks. Tasks are functions that take in parameters and evaluate to True or False based on their own logic.
 
-QuestNFT supports a number of built-in Tasks types, as well as a catch-all abstract Task type. When adding a new Quest, a game master can mix and match any number of these Tasks into the Quest:
+### Creating quests
+
+When adding a new Quest, a game master can mix and match lots of different kinds of Tasks. QuestNFT provides a number of built-in Task types, as well as a catch-all abstract Task type. Below is a summary of what's built-in:
 - **ERC20 balance check**: Makes sure that a player has a balance greater than or equal to an `amount` for a specific ERC20 token.
 - **NFT ownership check**: Makes sure that a player owns an NFT in a specific collection.
 - **Merkle Tree inclusion check**: Makes sure a player's address is a leaf in a given merkle tree.
@@ -27,9 +29,13 @@ QuestNFT supports a number of built-in Tasks types, as well as a catch-all abstr
 - **Admission of defeat**: Requires the player to provide a message from another player, admitting defeat.
 - **Abstract task**: A smart contract interface that can be implemented with any logic for checking whether or not it has been completed. This allows game masters to implement more custom quests if they want to.
 
-In order to complete a Quest, a player must call the `evaluateQuestStatus` function, passing in their `tokenId` and ensuring that all Tasks within the Quest return `true` simultaneously.
+### Completing a quest
+
+In order to complete a Quest, a player must call the `evaluateQuestStatus` function, passing in their `tokenId` and any Task parameters that are required. To completed the Quest, all Tasks within the Quest must return `true` simultaneously.
 
 Each Quest is worth a specific amount of XP, set by the game master who created it. When a player completes a quest, XP is added to their `tokenId`.
+
+### Quest data model
 
 Quests are stored using the following struct:
 ```
