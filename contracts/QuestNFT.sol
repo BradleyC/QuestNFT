@@ -197,8 +197,8 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         //       Fix: override transfer and use governor bravo style snapshots as of block numbers.
         require(signer == ownerOf(opponentTokenId), "NO!");
         // forward to funbug reward contract (?)
+        // TODO: change to quest XP value
         xpByTokenId[opponentTokenId] -= 25;
-        xpByTokenId[tokenId] += 30;
         isTokenBannedFromQuest[questId][opponentTokenId] = true;
         return true;
     }
@@ -223,6 +223,10 @@ contract QuestNFT is ERC721, Ownable, Pausable {
 
     function addGameMaster(address gm) public onlyOwner {
         isGameMaster[gm] = true;
+    }
+
+    function removeGameMaster(address gm) public onlyOwner {
+        isGameMaster[gm] = false;
     }
 
     // ============ MODIFIERS ============
