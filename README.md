@@ -1,13 +1,13 @@
 # Quest NFT
 Smart contract framework for quest-based games. Players get NFT accounts that they can use to complete quests and earn XP.
 
-### NFTs
+## NFTs
 
 The QuestNFT.sol contract allows players to mint QuestNFTs. Each NFT acts like a player's save file and keeps track of its XP and completed quests.
 
 Each QuestNFT is rendered as on-chain SVG displaying its XP and number of quests completed.
 
-### Game Masters
+## Game Masters
 
 Game masters are responsible for adding new quests. Only the owner of the contract can add and remove game masters.
 
