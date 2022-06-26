@@ -10,8 +10,6 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import 'base64-sol/base64.sol';
 
-// TODO: constructor - add owner as GM & set prices
-
 contract QuestNFT is ERC721, Ownable, Pausable {
     uint256 public publicMintPrice;
     uint256 internal _nextId;
@@ -33,16 +31,19 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         uint256 questRewardXP;
         bytes32[] questDescription;
         bytes4[] questTasks;
-        TaskParams[] taskParams;
         // reward logic
     }
 
-    // params that need to be stored on chain for each quest task
-    struct TaskParams {
-        uint256 amount; // amount for ERC20 or tokenId for defeating opponent or minimum ETH balance
-        bytes32 merkleRoot; // for merkle root OR abstract task
-        address foreignAddress; // for ERC721 contract or ERC20 contract or questAgent
-    }
+    mapping (uint256 => uint256[]) internal questsToTaskAmounts;
+    mapping (uint256 => bytes32[]) internal questsToTaskRoots;
+    mapping (uint256 => address[]) internal questsToTaskForeignAddress;
+
+    // // params that need to be stored on chain for each quest task
+    // struct TaskParams {
+    //     uint256 amount; // amount for ERC20 or tokenId for defeating opponent or minimum ETH balance
+    //     bytes32 merkleRoot; // for merkle root OR abstract task
+    //     address foreignAddress; // for ERC721 contract or ERC20 contract or questAgent
+    // }
 
     // prototype of all params post-merge
     struct MergedParams {
@@ -86,14 +87,12 @@ contract QuestNFT is ERC721, Ownable, Pausable {
                 q.questRewardXP = xp;
                 q.questDescription = questDescription;
                 q.questTasks = tasks;
-                TaskParams[] memory p;
-                for (uint256 i = 0; i < paramAmount.length; i++) {
-                    p[i].amount = paramAmount[i];
-                    p[i].merkleRoot = root[i];
-                    p[i].foreignAddress = fAddress[i];
-                }
-                q.taskParams = p;
                 quests.push(q);
+                for (uint256 i = 0; i < paramAmount.length; i++) {
+                    questsToTaskAmounts[q.questId].push(paramAmount[i]);
+                    questsToTaskRoots[q.questId].push(root[i]);
+                    questsToTaskForeignAddress[q.questId].push(fAddress[i]);
+                }
                 return true;
     }
 
@@ -104,9 +103,9 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         return quests[questId].questTasks;
     }
 
-    function getQuestTaskParams(uint256 questId) public view returns (TaskParams[] memory params) {
+    function getQuestTaskParams(uint256 questId) public view returns (uint256[] memory amounts, bytes32[] memory roots, address[] memory foreignAddresses) {
         require(questId <= quests.length);
-        return quests[questId].taskParams;
+        return (questsToTaskAmounts[questId], questsToTaskRoots[questId], questsToTaskForeignAddress[questId]);
     }
 
     function getTaskCount(uint256 questId) public view returns (uint256 count) {
@@ -126,13 +125,12 @@ contract QuestNFT is ERC721, Ownable, Pausable {
             require(isQuestCompletedByTokenId[tokenId][q.prerequisiteQuestId] == true, 'Must complete prerequisite quest');
             require(!isTokenIdBannedFromQuest[tokenId][questId] && !isQuestCompletedByTokenId[tokenId][questId], 'Already completed or BANNED');
             require(msg.sender == ownerOf(tokenId), 'Only owner can evaluate quest status');
-            TaskParams[] memory p = q.taskParams;
             MergedParams[] memory m;
             for (uint256 i = 0; i < q.questTasks.length; i++) {
                 // from storage
-                m[i].amount = p[i].amount;
-                m[i].merkleRoot = p[i].merkleRoot;
-                m[i].foreignAddress = p[i].foreignAddress;
+                m[i].amount = questsToTaskAmounts[questId][i];
+                m[i].merkleRoot = questsToTaskRoots[questId][i];
+                m[i].foreignAddress = questsToTaskForeignAddress[questId][i];
                 // from input
                 m[i].proof = proof[i];
                 m[i].hashedMessage = message[i];
@@ -145,7 +143,6 @@ contract QuestNFT is ERC721, Ownable, Pausable {
                 m[i].questXp = q.questRewardXP;
             } 
             for (uint256 i = 0; i < q.questTasks.length; i++) {
-                // might need to concatenate function signature + args into bytes
                 bool qBool;
                 bytes memory result;
                 (qBool, result) = address(this).call(abi.encodeWithSelector(q.questTasks[i], m[i]));
