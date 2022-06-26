@@ -3,7 +3,7 @@ const hre = require("hardhat");
 
 async function main() {
   const questDeploy = await hre.ethers.getContractFactory("QuestNFT");
-  const questInSitu = await memeDeploy.deploy();
+  const questInSitu = await questDeploy.deploy(0,0);
   await questInSitu.deployed();
   console.log("Contract deployed to:", questInSitu.address);
 }
