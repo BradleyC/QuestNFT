@@ -23,6 +23,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     mapping(uint256 => uint256) public questCompletedCountByTokenId;
     mapping(uint256 => uint256[]) public questsInProgressPerToken;
     mapping (uint256 => mapping (uint256 => bool)) isTokenIdBannedFromQuest;
+    mapping (address => bool) isGameMaster;
 
     struct Quest {
         uint256 questId;
@@ -65,6 +66,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
             bytes32[] calldata root, 
             address[] fAddress) 
             public payable returns (bool success) {
+                require(isGameMaster(msg.sender), 'only the wisened may create quests');
                 require(msg.value >= registerQuestCost);
                 require(xp > 25, 'no person levels up that quickly');
                 Quest memory q;
@@ -180,6 +182,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
         require(MerkleProof.verify(proof, merkleRoot, leaf),'MemberOfMerkleTreeTask: proof is not valid');
         return true;
+        
     }
 
     // Get other player to admit defeat
@@ -195,7 +198,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         require(signer == ownerOf(opponentTokenId), "NO!");
         // forward to funbug reward contract (?)
         xpByTokenId[opponentTokenId] -= 25;
-        xpByTokenId[tokenId] += 25;
+        xpByTokenId[tokenId] += 30;
         isTokenBannedFromQuest[questId][opponentTokenId] = true;
         return true;
     }
@@ -218,15 +221,19 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         _mint(to, _nextId++);
     }
 
+    function addGameMaster(address gm) public onlyOwner {
+        isGameMaster[gm] = true;
+    }
+
     // ============ MODIFIERS ============
 
-    modifier publicMintPaid() {
+    modifier publicMintPaid {
         require(msg.value == publicMintPrice, 'QuestNFT: invalid mint fee');
         _;
     }
 
     modifier onlyTokenOwner(uint256 tokenId) {
-        require(msg.sender == ERC721.ownerOf(tokenId), 'QuestNFT: only owner can build Shield');
+        require(msg.sender == ERC721.ownerOf(tokenId), 'QuestNFT: only owner can attempt a quest');
         _;
     }
 
