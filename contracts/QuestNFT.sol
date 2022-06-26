@@ -38,13 +38,6 @@ contract QuestNFT is ERC721, Ownable, Pausable {
     mapping (uint256 => bytes32[]) internal questsToTaskRoots;
     mapping (uint256 => address[]) internal questsToTaskForeignAddress;
 
-    // // params that need to be stored on chain for each quest task
-    // struct TaskParams {
-    //     uint256 amount; // amount for ERC20 or tokenId for defeating opponent or minimum ETH balance
-    //     bytes32 merkleRoot; // for merkle root OR abstract task
-    //     address foreignAddress; // for ERC721 contract or ERC20 contract or questAgent
-    // }
-
     // prototype of all params post-merge
     struct MergedParams {
         uint256 amount; // amount for ERC20 or tokenId for defeating opponent or minimum ETH balance
@@ -201,7 +194,6 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
         require(MerkleProof.verify(proof, merkleRoot, leaf),'MemberOfMerkleTreeTask: proof is not valid');
         return true;
-        
     }
 
     // Get other player to admit defeat
@@ -230,7 +222,6 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         uint256 minimumBalance = m.amount;
         address playerAddress = m.sender;
         require(playerAddress.balance >= minimumBalance, "ETHMinimumBalanceTask: not enough ETH");
-
         return true;
     }
 
