@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import 'base64-sol/base64.sol';
 
-// TODO: refactor evaluator functions
 // TODO: constructor - add owner as GM & set prices
 
 contract QuestNFT is ERC721, Ownable, Pausable {
@@ -217,7 +216,6 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         //       Fix: override transfer and use governor bravo style snapshots as of block numbers.
         require(signer == ownerOf(opponentTokenId), "NO!");
         // forward to funbug reward contract (?)
-        // TODO: change to quest XP value
         xpByTokenId[opponentTokenId] -= m.questXp;
         isTokenBannedFromQuest[questId][opponentTokenId] = true;
         return true;
@@ -228,6 +226,7 @@ contract QuestNFT is ERC721, Ownable, Pausable {
         uint256 minimumBalance = m.amount;
         address playerAddress = m.sender;
         require(playerAddress.balance >= minimumBalance, "ETHMinimumBalanceTask: not enough ETH");
+
         return true;
     }
 
